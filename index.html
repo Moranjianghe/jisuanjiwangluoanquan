@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>计算机22级计算机信息安全题库</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
+  <style>
+    body {
+      background: #f6f8fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+    .sidebar {
+      width: 220px;
+      background: #fff;
+      border-right: 1px solid #e1e4e8;
+      padding: 32px 16px 32px 24px;
+      box-sizing: border-box;
+      height: 100vh;
+      overflow-y: auto;
+      position: sticky;
+      top: 0;
+    }
+    .sidebar h3 {
+      margin-top: 0;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar li {
+      margin-bottom: 8px;
+    }
+    .sidebar a {
+      color: #0969da;
+      text-decoration: none;
+      font-size: 16px;
+      transition: color 0.2s;
+    }
+    .sidebar a:hover {
+      color: #d73a49;
+    }
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      padding: 32px 40px;
+      flex: 1;
+    }
+    .markdown-body {
+      box-sizing: border-box;
+      min-width: 200px;
+      max-width: 100%;
+    }
+    @media (max-width: 900px) {
+      .container { padding: 16px; }
+      .sidebar { display: none; }
+    }
+    .toc-section { margin-bottom: 18px; }
+    .toc-title { font-weight: bold; margin: 10px 0 8px 0; font-size: 15px; color: #444; }
+    .toc-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .toc-btn {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+      text-align: center;
+      background: #f3f4f6;
+      border-radius: 6px;
+      color: #0969da;
+      text-decoration: none;
+      font-size: 16px;
+      border: 1px solid #e1e4e8;
+      transition: background 0.2s, color 0.2s;
+    }
+    .toc-btn:hover {
+      background: #dbeafe;
+      color: #d73a49;
+      border-color: #b6d4fe;
+    }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <h3>题号目录</h3>
+    <div id="toc"></div>
+  </nav>
+  <div class="container">
+    <article id="content" class="markdown-body">
+      <h2>加载中...</h2>
+    </article>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    // 默认加载题库.md
+    fetch('题库.md')
+      .then(res => res.text())
+      .then(md => {
+        // 1. 解析分区
+        const sections = [];
+        const sectionRegex = /^##\s*([\u4e00-\u9fa5A-Za-z0-9、]+)\s*$/gm;
+        let match;
+        while ((match = sectionRegex.exec(md)) !== null) {
+          sections.push({
+            name: match[1],
+            start: match.index
+          });
+        }
+        // 2. 统计每区题号
+        const tocData = [];
+        for (let i = 0; i < sections.length; i++) {
+          const start = sections[i].start;
+          const end = i + 1 < sections.length ? sections[i + 1].start : md.length;
+          const part = md.slice(start, end);
+          const qRegex = /\*\*(\d+)\./g;
+          let qMatch;
+          const questions = [];
+          while ((qMatch = qRegex.exec(part)) !== null) {
+            questions.push(qMatch[1]);
+          }
+          tocData.push({
+            name: sections[i].name,
+            questions
+          });
+        }
+        // 3. 给题号加锚点
+        let html = marked.parse(md);
+        html = html.replace(/<strong>(\d+)\./g, (m, p1) => `<strong id="q${p1}">${p1}.`);
+        document.getElementById('content').innerHTML = html;
+        // 4. 渲染目录（每行5个按钮，分区显示）
+        const tocDiv = document.getElementById('toc');
+        tocDiv.innerHTML = tocData.map(sec => {
+          let btns = sec.questions.map((num, idx) => {
+            return `<a href='#q${num}' class='toc-btn'>${num}</a>`;
+          });
+          // 每5个一行
+          let rows = [];
+          for (let i = 0; i < btns.length; i += 5) {
+            rows.push(`<div class='toc-row'>${btns.slice(i, i+5).join('')}</div>`);
+          }
+          return `<div class='toc-section'><div class='toc-title'>${sec.name}</div>${rows.join('')}</div>`;
+        }).join('');
+      })
+      .catch(() => {
+        document.getElementById('content').innerHTML = '<p>无法加载 Markdown 文件。</p>';
+      });
+  </script>
+</body>
+</html>
